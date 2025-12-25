@@ -1,86 +1,165 @@
 {% extends "layout.html" %} {% block content %}
 
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
 <div class="row mb-4">
   <div class="col-12 text-center">
     <h2 class="fw-bold text-primary">
-      <i class="fa-solid fa-microscope me-2"></i>Veri Analizi ve İstatistikler
+      <i class="fa-solid fa-microscope me-2"></i>Detaylı Veri Analizi
     </h2>
     <p class="text-muted">
-      Bu bölümde, veri setindeki değişkenler arasındaki ilişkiler farklı
-      istatistiksel yöntemlerle incelenmiştir. (Kaynak: Ders Notları -
-      Correlation & Categorical Data Analysis)
+      Fiyatı etkileyen faktörlerin görsel, sayısal ve akademik analizi.
     </p>
   </div>
 </div>
 
 <ul class="nav nav-tabs nav-justified mb-3" id="analysisTab" role="tablist">
-  <li class="nav-item" role="presentation">
+  <li class="nav-item">
     <button
       class="nav-link active"
-      id="numeric-tab"
+      id="visual-tab"
       data-bs-toggle="tab"
-      data-bs-target="#numeric"
+      data-bs-target="#visual"
       type="button"
-      role="tab"
     >
-      <i class="fa-solid fa-calculator me-1"></i>Sayısal Korelasyonlar
+      <i class="fa-solid fa-eye me-1"></i>Görsel Analiz (Isı Haritası)
     </button>
   </li>
 
-  <li class="nav-item" role="presentation">
+  <li class="nav-item">
     <button
       class="nav-link"
-      id="categorical-tab"
+      id="tables-tab"
       data-bs-toggle="tab"
-      data-bs-target="#categorical"
+      data-bs-target="#tables"
       type="button"
-      role="tab"
     >
-      <i class="fa-solid fa-shapes me-1"></i>Kategorik (Cramer's V)
+      <i class="fa-solid fa-table me-1"></i>Korelasyon Tabloları
     </button>
   </li>
 
-  <li class="nav-item" role="presentation">
+  <li class="nav-item">
     <button
       class="nav-link"
-      id="info-tab"
+      id="report-tab"
       data-bs-toggle="tab"
-      data-bs-target="#info"
+      data-bs-target="#report"
       type="button"
-      role="tab"
     >
-      <i class="fa-solid fa-book-open me-1"></i>Akademik Rapor & Tutarlılık
+      <i class="fa-solid fa-book-open me-1"></i>Akademik Rapor
     </button>
   </li>
 </ul>
 
 <div
   class="tab-content p-4 border border-top-0 bg-white shadow-sm rounded-bottom"
-  id="myTabContent"
 >
-  <div class="tab-pane fade show active" id="numeric" role="tabpanel">
-    <div class="alert alert-light border-start border-4 border-primary">
-      <strong>Bilgi:</strong> Aşağıdaki matrisler, sayısal değişkenlerin
-      birbirleriyle olan ilişkisini gösterir. (+1: Mükemmel Pozitif İlişki, -1:
-      Mükemmel Negatif İlişki).
+  <div class="tab-pane fade show active" id="visual">
+    <h5 class="fw-bold text-dark mb-3">📢 Fiyatı En Çok Etkileyen Faktörler</h5>
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="card border-success h-100">
+          <div class="card-header bg-success text-white">
+            <i class="fa-solid fa-arrow-trend-up me-2"></i>Fiyatı ARTIRAN İlk 3
+            Faktör
+          </div>
+          <ul class="list-group list-group-flush">
+            {% for feature, score in influencers.pozitif.items() %}
+            <li
+              class="list-group-item d-flex justify-content-between align-items-center"
+            >
+              <strong>{{ feature }}</strong>
+              <span class="badge bg-success rounded-pill"
+                >+{{ "%.2f"|format(score) }}</span
+              >
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card border-danger h-100">
+          <div class="card-header bg-danger text-white">
+            <i class="fa-solid fa-arrow-trend-down me-2"></i>Fiyatı DÜŞÜREN İlk
+            3 Faktör
+          </div>
+          <ul class="list-group list-group-flush">
+            {% for feature, score in influencers.negatif.items() %}
+            <li
+              class="list-group-item d-flex justify-content-between align-items-center"
+            >
+              <strong>{{ feature }}</strong>
+              <span class="badge bg-danger rounded-pill"
+                >{{ "%.2f"|format(score) }}</span
+              >
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
     </div>
 
-    <div class="accordion" id="correlationAccordion">
+    <hr />
+
+    <h5 class="fw-bold text-dark mb-3">🔥 Korelasyon Isı Haritası (Heatmap)</h5>
+    <div class="card shadow-sm">
+      <div class="card-body p-1">
+        <div id="heatmapPlot" style="width: 100%; height: 600px"></div>
+      </div>
+      <div class="card-footer small text-muted text-center">
+        * Sarı/Kırmızı tonlar güçlü ilişkiyi, Mavi/Mor tonlar düşük ilişkiyi
+        gösterir.
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-pane fade" id="tables">
+    <h5 class="text-primary fw-bold mb-3">Kategorik İlişkiler (Cramer's V)</h5>
+    <div class="row mb-4">
+      {% for key, value in cat_corr.items() %}
+      <div class="col-md-4 mb-3">
+        <div
+          class="card border-{{ 'primary' if value > 0.3 else 'secondary' }}"
+        >
+          <div
+            class="card-body d-flex justify-content-between align-items-center py-2"
+          >
+            <span class="fw-bold">{{ key }}</span>
+            <span
+              class="badge bg-{{ 'primary' if value > 0.3 else 'secondary' }}"
+              >{{ value }}</span
+            >
+          </div>
+          <div class="progress" style="height: 3px">
+            <div
+              class="progress-bar bg-{{ 'primary' if value > 0.3 else 'secondary' }}"
+              style="width: {{ value * 100 }}%"
+            ></div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <hr />
+
+    <h5 class="text-primary fw-bold mb-3">Sayısal Korelasyon Matrisleri</h5>
+    <div class="accordion" id="corrAccordion">
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button
             class="accordion-button"
             type="button"
             data-bs-toggle="collapse"
-            data-bs-target="#collapsePearson"
+            data-bs-target="#pearsonTable"
           >
-            <strong>Pearson Korelasyonu</strong> (Doğrusal İlişkiler İçin)
+            <strong>Pearson (Doğrusal)</strong>
           </button>
         </h2>
         <div
-          id="collapsePearson"
+          id="pearsonTable"
           class="accordion-collapse collapse show"
-          data-bs-parent="#correlationAccordion"
+          data-bs-parent="#corrAccordion"
         >
           <div class="accordion-body table-responsive small-font">
             {{ pearson_corr | safe }}
@@ -94,16 +173,15 @@
             class="accordion-button collapsed"
             type="button"
             data-bs-toggle="collapse"
-            data-bs-target="#collapseSpearman"
+            data-bs-target="#spearmanTable"
           >
-            <strong>Spearman Korelasyonu</strong> (Sıralı Veriler ve Outlier
-            Direnci İçin)
+            <strong>Spearman (Sıralı/Rank)</strong>
           </button>
         </h2>
         <div
-          id="collapseSpearman"
+          id="spearmanTable"
           class="accordion-collapse collapse"
-          data-bs-parent="#correlationAccordion"
+          data-bs-parent="#corrAccordion"
         >
           <div class="accordion-body table-responsive small-font">
             {{ spearman_corr | safe }}
@@ -117,15 +195,15 @@
             class="accordion-button collapsed"
             type="button"
             data-bs-toggle="collapse"
-            data-bs-target="#collapseKendall"
+            data-bs-target="#kendallTable"
           >
-            <strong>Kendall's Tau</strong> (Alternatif Sıralama Analizi)
+            <strong>Kendall's Tau</strong>
           </button>
         </h2>
         <div
-          id="collapseKendall"
+          id="kendallTable"
           class="accordion-collapse collapse"
-          data-bs-parent="#correlationAccordion"
+          data-bs-parent="#corrAccordion"
         >
           <div class="accordion-body table-responsive small-font">
             {{ kendall_corr | safe }}
@@ -135,135 +213,103 @@
     </div>
   </div>
 
-  <div class="tab-pane fade" id="categorical" role="tabpanel">
-    <h5 class="mb-3 text-secondary">
-      Fiyat Üzerindeki Kategorik Etkiler (0 ile 1 arası)
-    </h5>
-
-    <div class="row">
-      {% for key, value in cat_corr.items() %}
-      <div class="col-md-6 col-lg-4 mb-3">
-        <div
-          class="card h-100 border-{{ 'primary' if value > 0.3 else 'secondary' }}"
-        >
-          <div
-            class="card-body d-flex justify-content-between align-items-center"
-          >
-            <div>
-              <h6 class="card-title fw-bold mb-0">{{ key }}</h6>
-              <small class="text-muted">vs Fiyat</small>
-            </div>
-            <span
-              class="badge rounded-pill bg-{{ 'primary' if value > 0.3 else 'secondary' }} fs-6"
-            >
-              {{ value }}
-            </span>
+  <div class="tab-pane fade" id="report">
+    <div class="card border-{{ consistency.renk }} mb-4">
+      <div class="card-header bg-{{ consistency.renk }} text-white fw-bold">
+        <i class="fa-solid fa-scale-balanced me-2"></i>Yöntemler Arası
+        Tutarlılık Analizi
+      </div>
+      <div class="card-body">
+        <div class="row text-center align-items-center">
+          <div class="col-md-4">
+            <small class="text-muted d-block">Pearson vs Spearman Farkı</small>
+            <h2 class="fw-bold">{{ consistency.fark }}</h2>
           </div>
-          <div class="card-footer bg-transparent border-0 pt-0">
-            <div class="progress" style="height: 5px">
-              <div
-                class="progress-bar bg-{{ 'primary' if value > 0.3 else 'secondary' }}"
-                role="progressbar"
-                style="width: {{ value * 100 }}%"
-              ></div>
-            </div>
+          <div class="col-md-4 border-start border-end">
+            <small class="text-muted d-block">Benzerlik Oranı</small>
+            <h2 class="fw-bold text-{{ consistency.renk }}">
+              % {{ consistency.yuzde }}
+            </h2>
+          </div>
+          <div class="col-md-4 text-start">
+            <small class="text-muted d-block">Yapay Zeka Yorumu:</small>
+            <p class="mb-0 fw-bold">{{ consistency.yorum }}</p>
           </div>
         </div>
       </div>
-      {% endfor %}
     </div>
 
-    <div class="alert alert-info mt-3">
-      <i class="fa-solid fa-info-circle me-2"></i>
-      <strong>Bilgi:</strong> Cramer's V değeri 1'e yaklaştıkça, kategorik
-      değişkenin (Marka, Vites vb.) fiyat üzerindeki etkisi artar. Bu analiz,
-      Nominal (İsimsel) verilerin fiyatlandırmadaki rolünü gösterir.
-    </div>
-  </div>
-
-  <div class="tab-pane fade" id="info" role="tabpanel">
-    <div class="row mb-4">
+    <div class="row">
       <div class="col-md-6">
-        <div class="card h-100 shadow-sm">
-          <div class="card-header fw-bold bg-primary text-white">
-            <i class="fa-solid fa-question-circle me-2"></i>Neden Farklı
-            Yöntemler?
+        <div class="card h-100">
+          <div class="card-header fw-bold bg-light">
+            Neden Farklı Yöntemler?
           </div>
           <div class="card-body">
-            <ul class="list-group list-group-flush">
+            <ul class="list-group list-group-flush small">
               <li class="list-group-item">
-                <strong>Pearson:</strong> Verilerin normal dağıldığı ve
-                ilişkinin doğrusal olduğu durumlarda kullanılır. Outlier'lara
-                karşı hassastır.
+                <strong>Pearson:</strong> Veriler normal dağılıyorsa en
+                iyisidir. Outlier'a karşı çok hassastır.
               </li>
               <li class="list-group-item">
-                <strong>Spearman:</strong> Veriler sıralıysa (Ordinal) veya
-                normal dağılmıyorsa kullanılır. Outlier'lardan daha az
-                etkilenir.
+                <strong>Spearman:</strong> Veriler sıralıysa (Ordinal) veya uç
+                değerler (Outlier) çoksa kullanılır.
               </li>
               <li class="list-group-item">
-                <strong>Kendall's Tau:</strong> Veri seti küçükse veya sıralama
-                çok önemliyse Spearman'dan daha tutarlıdır.
+                <strong>Kendall:</strong> Küçük veri setlerinde Spearman'dan
+                daha güvenilirdir.
+              </li>
+              <li class="list-group-item">
+                <strong>Cramer's V:</strong> Marka, Renk gibi sözel verilerin
+                ilişkisini ölçer.
               </li>
             </ul>
           </div>
         </div>
       </div>
-
       <div class="col-md-6">
-        <div class="card h-100 shadow-sm">
-          <div class="card-header fw-bold bg-success text-white">
-            <i class="fa-solid fa-bullseye me-2"></i>Outlier (Fırsat) Analizi
-            Yöntemi
-          </div>
+        <div class="card h-100">
+          <div class="card-header fw-bold bg-light">Kullanılan Modeller</div>
           <div class="card-body">
-            <p>
-              Bu projede Outlier tespiti için
-              <strong>Residual Z-Score</strong> yöntemi kullanılmıştır.
+            <p class="small">
+              <strong>Random Forest Regressor:</strong> Fiyat tahmini için
+              kullanıldı. 200 adet karar ağacı içerir. Tek bir formül yerine
+              binlerce olasılığı değerlendirdiği için "uçuk rakamlar"
+              (Overfitting) üretmez.
             </p>
-            <p>
-              Regresyon modelinin tahmin hatası (Residual), standart sapmaya
-              bölünerek Z-Skoru elde edilmiştir. Z-Skoru
-              <strong>-1.5'ten küçük</strong> olan araçlar, piyasanın altında
-              fiyatlandığı için "Fırsat" olarak etiketlenmiştir.
+            <p class="small">
+              <strong>Z-Score Outlier Detection:</strong> Modelin tahmin
+              hatasının standart sapması hesaplanarak, ±1.5 sapma gösteren
+              araçlar "Fırsat" veya "Kazık" olarak etiketlendi.
             </p>
           </div>
         </div>
-      </div>
-    </div>
-
-    <h4 class="fw-bold text-dark mb-3">
-      📊 Yöntemler Arası Tutarlılık Analizi
-    </h4>
-
-    <div class="card border-{{ consistency.renk }} mb-3">
-      <div class="card-header bg-{{ consistency.renk }} text-white fw-bold">
-        Pearson vs Spearman Karşılaştırması
-      </div>
-      <div class="card-body">
-        <div class="row text-center align-items-center">
-          <div class="col-md-4">
-            <h6 class="text-muted">Ortalama Fark</h6>
-            <h3 class="fw-bold">{{ consistency.fark }}</h3>
-          </div>
-          <div class="col-md-4">
-            <h6 class="text-muted">Benzerlik (Tutarlılık)</h6>
-            <h3 class="fw-bold text-{{ consistency.renk }}">
-              % {{ consistency.yuzde }}
-            </h3>
-          </div>
-          <div class="col-md-4 text-start">
-            <h6 class="text-muted">Otomatik Yorum</h6>
-            <p class="mb-0">{{ consistency.yorum }}</p>
-          </div>
-        </div>
-      </div>
-      <div class="card-footer text-muted small">
-        * Pearson ile Spearman arasındaki fark arttıkça, verideki doğrusallıktan
-        sapma ve aykırı değer (Outlier) miktarı artar.
       </div>
     </div>
   </div>
 </div>
+
+<script>
+  var zValues = {{ heatmap_data.z | tojson }};
+  var xValues = {{ heatmap_data.x | tojson }};
+  var yValues = {{ heatmap_data.y | tojson }};
+
+  var data = [{
+      z: zValues,
+      x: xValues,
+      y: yValues,
+      type: 'heatmap',
+      colorscale: 'Viridis',
+      hoverongaps: false
+  }];
+
+  var layout = {
+      title: 'Değişkenler Arası İlişki Matrisi',
+      margin: {l: 100, b: 100},
+      responsive: true
+  };
+
+  Plotly.newPlot('heatmapPlot', data, layout);
+</script>
 
 {% endblock %}

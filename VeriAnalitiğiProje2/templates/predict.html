@@ -7,69 +7,99 @@
         <i class="fa-solid fa-calculator me-2"></i>Araç Değer Hesaplama
       </h2>
       <p class="text-muted">
-        Aracın teknik özelliklerini aşağıya girin, yapay zeka modelimiz
-        <strong>adil piyasa değerini</strong> hesaplasın.
+        Aracın teknik özelliklerini girin, yapay zeka adil piyasa değerini
+        hesaplasın.
       </p>
     </div>
 
     <div class="card shadow-lg border-0">
-      <div class="card-header bg-dark text-white">
+      <div
+        class="card-header bg-dark text-white d-flex justify-content-between align-items-center"
+      >
         <h5 class="mb-0">
           <i class="fa-solid fa-filter me-2"></i>Araç Özellikleri
         </h5>
+        <small id="modelInfoBadge" class="badge bg-warning text-dark d-none"
+          >Veri Hazır</small
+        >
       </div>
       <div class="card-body p-4">
-        <form action="{{ url_for('predict') }}" method="POST">
-          <h6 class="text-primary fw-bold mb-3">Temel Bilgiler</h6>
+        <form action="{{ url_for('predict') }}" method="POST" id="predictForm">
+          <h6 class="text-primary fw-bold mb-3">Araç Kimliği</h6>
           <div class="row mb-3">
-            <div class="col-md-4 mb-3">
+            <div class="col-md-6 mb-3">
               <label class="form-label fw-bold small">Marka</label>
-              <select class="form-select" name="marka" required>
-                <option value="" selected disabled>Seçiniz...</option>
+              <select
+                class="form-select"
+                name="marka"
+                id="markaSelect"
+                required
+              >
+                <option value="" selected disabled>Marka Seçiniz...</option>
                 {% for item in options['markalar'] %}
                 <option value="{{ item }}">{{ item|upper }}</option>
                 {% endfor %}
               </select>
             </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold small">Model</label>
+              <select class="form-select" id="modelSelect" disabled>
+                <option value="" selected disabled>Önce Marka Seçiniz</option>
+              </select>
+            </div>
+          </div>
 
-            <div class="col-md-4 mb-3">
-              <label class="form-label fw-bold small">Yakıt Tipi</label>
-              <select class="form-select" name="yakit_tipi" required>
-                <option value="" selected disabled>Seçiniz...</option>
+          <div
+            id="statsBox"
+            class="alert alert-info d-none fade show"
+            role="alert"
+          >
+            <div class="row text-center">
+              <div class="col-4 border-end">
+                <small class="d-block text-muted">Fiyat Aralığı</small>
+                <strong class="text-dark" id="priceRange">-</strong>
+              </div>
+              <div class="col-4 border-end">
+                <small class="d-block text-muted">Ort. Fiyat</small>
+                <strong class="text-primary" id="avgPrice">-</strong>
+              </div>
+              <div class="col-4">
+                <small class="d-block text-muted">Ort. Güç</small>
+                <strong class="text-danger" id="avgHp">-</strong>
+              </div>
+            </div>
+          </div>
+
+          <hr />
+
+          <div class="row mb-3">
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">Yakıt</label>
+              <select class="form-select" name="yakit_tipi">
                 {% for item in options['yakitlar'] %}
                 <option value="{{ item }}">{{ item }}</option>
                 {% endfor %}
               </select>
             </div>
-
-            <div class="col-md-4 mb-3">
-              <label class="form-label fw-bold small">Kasa Tipi</label>
-              <select class="form-select" name="kasa_tipi" required>
-                <option value="" selected disabled>Seçiniz...</option>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">Kasa</label>
+              <select class="form-select" name="kasa_tipi">
                 {% for item in options['kasalar'] %}
                 <option value="{{ item }}">{{ item }}</option>
                 {% endfor %}
               </select>
             </div>
-          </div>
-
-          <div class="row mb-4">
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-bold small">Çekiş Sistemi</label>
-              <select class="form-select" name="cekis" required>
-                <option value="" selected disabled>Seçiniz...</option>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">Çekiş</label>
+              <select class="form-select" name="cekis">
                 {% for item in options['cekisler'] %}
                 <option value="{{ item }}">{{ item }}</option>
                 {% endfor %}
               </select>
             </div>
-
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-bold small"
-                >Motor Besleme (Turbo)</label
-              >
-              <select class="form-select" name="hava_besleme" required>
-                <option value="" selected disabled>Seçiniz...</option>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">Turbo</label>
+              <select class="form-select" name="hava_besleme">
                 {% for item in options['beslemeler'] %}
                 <option value="{{ item }}">{{ item }}</option>
                 {% endfor %}
@@ -77,9 +107,9 @@
             </div>
           </div>
 
-          <hr />
-
-          <h6 class="text-primary fw-bold mb-3">Teknik Detaylar</h6>
+          <h6 class="text-primary fw-bold mb-3">
+            Teknik Detaylar (Limit Kontrollü)
+          </h6>
           <div class="row">
             <div class="col-md-3 mb-3">
               <label class="form-label fw-bold small">Beygir (HP)</label>
@@ -87,10 +117,14 @@
                 type="number"
                 class="form-control"
                 name="beygir"
-                placeholder="Örn: 110"
+                id="hpInput"
+                placeholder="HP"
                 step="any"
                 required
               />
+              <div class="invalid-feedback">
+                Bu model için değer çok yüksek!
+              </div>
             </div>
 
             <div class="col-md-3 mb-3">
@@ -99,25 +133,26 @@
                 type="number"
                 class="form-control"
                 name="motor"
-                placeholder="Örn: 1600"
+                id="motorInput"
+                placeholder="cc"
                 step="any"
                 required
               />
+              <div class="invalid-feedback">Motor hacmi mantıksız!</div>
             </div>
 
             <div class="col-md-3 mb-3">
-              <label class="form-label fw-bold small">Otoyol Yakıt (MPG)</label>
+              <label class="form-label fw-bold small">Yakıt (MPG)</label>
               <input
                 type="number"
                 class="form-control"
                 name="yakit_tuketin"
-                placeholder="Örn: 30"
+                id="yakitInput"
+                placeholder="MPG"
                 step="any"
                 required
               />
-              <div class="form-text text-muted" style="font-size: 0.7rem">
-                Yüksek değer = Az yakar
-              </div>
+              <div class="invalid-feedback">Değer çok yüksek!</div>
             </div>
 
             <div class="col-md-3 mb-3">
@@ -126,10 +161,12 @@
                 type="number"
                 class="form-control"
                 name="agirlik"
-                placeholder="Örn: 2500"
+                id="agirlikInput"
+                placeholder="Lbs"
                 step="any"
                 required
               />
+              <div class="invalid-feedback">Bu kadar ağır olamaz!</div>
             </div>
           </div>
 
@@ -142,14 +179,18 @@
                 type="number"
                 class="form-control border-success"
                 name="bulunan_fiyat"
-                placeholder="İlandaki fiyatı girerseniz Fırsat/Kazık analizi yaparım..."
+                id="priceInput"
+                placeholder="Fırsat Analizi için fiyat girin..."
                 step="any"
               />
+              <div class="invalid-feedback">
+                Bu fiyata bu araba imkansız (Çok Yüksek)!
+              </div>
             </div>
           </div>
 
           <div class="d-grid gap-2 mt-4">
-            <button type="submit" class="btn btn-primary btn-lg">
+            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
               <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Değeri Hesapla
             </button>
           </div>
@@ -170,23 +211,121 @@
         {% if result.hata %}
         <div class="alert alert-danger">{{ result.hata }}</div>
         {% else %}
-        <p class="text-muted mb-1">
-          {{ result.marka }} aracı için hesaplanan piyasa değeri:
-        </p>
+        <p class="text-muted mb-1">{{ result.marka }} için hesaplanan değer:</p>
         <h1 class="display-4 fw-bold text-dark">{{ result.tahmin }} $</h1>
-
         {% if result.analiz %}
         <hr />
         <h4 class="fw-bold text-{{ result.renk }}">{{ result.analiz }}</h4>
-        <p class="small text-muted">
-          (Bu analiz, modelin tahmin ettiği fiyat ile ilandaki fiyat farkına
-          göre yapılmıştır.)
-        </p>
         {% endif %} {% endif %}
       </div>
     </div>
     {% endif %}
   </div>
 </div>
+
+<script>
+  const markaSelect = document.getElementById("markaSelect");
+  const modelSelect = document.getElementById("modelSelect");
+  const statsBox = document.getElementById("statsBox");
+  const submitBtn = document.getElementById("submitBtn");
+
+  // İnputlar
+  const inputs = {
+    hp: document.getElementById("hpInput"),
+    motor: document.getElementById("motorInput"),
+    yakit: document.getElementById("yakitInput"),
+    agirlik: document.getElementById("agirlikInput"),
+    fiyat: document.getElementById("priceInput"),
+  };
+
+  let currentStats = null;
+
+  // MARKA SEÇİMİ
+  markaSelect.addEventListener("change", function () {
+    const brand = this.value;
+    modelSelect.disabled = true;
+    modelSelect.innerHTML = "<option>Yükleniyor...</option>";
+    fetch(`/api/get_models/${brand}`)
+      .then((res) => res.json())
+      .then((models) => {
+        modelSelect.innerHTML =
+          '<option value="" selected disabled>Model Seçiniz...</option><option value="Tümü">Tüm Modeller</option>';
+        models.forEach(
+          (m) => (modelSelect.innerHTML += `<option value="${m}">${m}</option>`)
+        );
+        modelSelect.disabled = false;
+      });
+  });
+
+  // MODEL SEÇİMİ VE STATS ÇEKME
+  modelSelect.addEventListener("change", function () {
+    const brand = markaSelect.value;
+    const model = this.value;
+
+    fetch(`/api/get_stats/${brand}/${model}`)
+      .then((res) => res.json())
+      .then((data) => {
+        currentStats = data;
+        statsBox.classList.remove("d-none");
+
+        // İstatistikleri Yazdır
+        document.getElementById(
+          "priceRange"
+        ).innerText = `${data.fiyat_min} $ - ${data.fiyat_max} $`;
+        document.getElementById("avgPrice").innerText = `${data.fiyat_ort} $`;
+        document.getElementById("avgHp").innerText = `${data.hp_ort} HP`;
+
+        // Placeholderları Güncelle (Kullanıcıya ipucu ver)
+        inputs.hp.placeholder = `Ort: ${data.hp_ort}`;
+        inputs.motor.placeholder = `Ort: ${data.motor_ort}`;
+        inputs.yakit.placeholder = `Ort: ${data.yakit_ort}`;
+        inputs.agirlik.placeholder = `Ort: ${data.agirlik_ort}`;
+
+        // Formu temizle ve hataları sil
+        Object.values(inputs).forEach((input) => {
+          input.value = "";
+          input.classList.remove("is-invalid");
+        });
+        submitBtn.disabled = false;
+      });
+  });
+
+  // GENEL VALIDATION FONKSİYONU
+  function validateInput(inputElement, value, maxLimit, multiplier = 1.5) {
+    if (!currentStats) return;
+    const limit = maxLimit * multiplier; // Max değerin 1.5 katına izin ver
+
+    if (value > limit) {
+      inputElement.classList.add("is-invalid");
+      submitBtn.disabled = true; // Butonu kilitle
+    } else {
+      inputElement.classList.remove("is-invalid");
+      // Eğer başka hatalı alan yoksa butonu aç
+      const hasError = document.querySelector(".is-invalid");
+      if (!hasError) submitBtn.disabled = false;
+    }
+  }
+
+  // EVENT LISTENERS (HER GİRİŞTE KONTROL ET)
+  inputs.hp.addEventListener("input", function () {
+    validateInput(this, parseFloat(this.value), currentStats.hp_max);
+  });
+
+  inputs.motor.addEventListener("input", function () {
+    validateInput(this, parseFloat(this.value), currentStats.motor_max);
+  });
+
+  inputs.yakit.addEventListener("input", function () {
+    validateInput(this, parseFloat(this.value), currentStats.yakit_max, 2.0); // Yakıt biraz esnek olabilir
+  });
+
+  inputs.agirlik.addEventListener("input", function () {
+    validateInput(this, parseFloat(this.value), currentStats.agirlik_max);
+  });
+
+  inputs.fiyat.addEventListener("input", function () {
+    validateInput(this, parseFloat(this.value), currentStats.fiyat_max, 2.5); // Fiyat spekülatif olabilir, 2.5 kat izin ver
+  });
+</script>
 
 {% endblock %}

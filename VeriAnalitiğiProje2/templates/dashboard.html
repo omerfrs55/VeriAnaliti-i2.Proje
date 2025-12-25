@@ -4,24 +4,17 @@
   <div class="col-md-8">
     <h2 class="fw-bold text-primary">📊 Piyasa Genel Durumu</h2>
     <p class="text-muted">
-      Aşağıdaki grafik, piyasadaki binlerce aracın
-      <strong>Beygir Gücü</strong> ve <strong>Fiyat</strong> ilişkisini
-      gösterir. Kırmızı yıldızlar, modelimizin tespit ettiği
-      <strong>Fırsat Araçlarıdır</strong>.
+      Aşağıdaki grafik, piyasadaki araçların <strong>Beygir Gücü</strong> ve
+      <strong>Fiyat</strong> ilişkisini gösterir. Kırmızı yıldızlar, modelimizin
+      tespit ettiği <strong>Fırsat Araçlarıdır</strong>.
     </p>
   </div>
-
   <div class="col-md-4">
     <div class="card shadow-sm border-primary h-100">
       <div class="card-body text-center">
-        <h6 class="text-uppercase text-muted fw-bold">
-          Model Güvenilirliği (R²)
-        </h6>
+        <h6 class="text-uppercase text-muted fw-bold">Model Başarısı (R²)</h6>
         <h1 class="display-4 fw-bold text-primary">{{ r_sq }}</h1>
-        <small class="text-muted">
-          Outlier'lar temizlendikten sonraki açıklayıcılık oranı. (1.00'e ne
-          kadar yakınsa o kadar iyi)
-        </small>
+        <small class="text-muted">Güvenilirlik Oranı (Max: 1.0)</small>
       </div>
     </div>
   </div>
@@ -29,7 +22,7 @@
 
 <div class="row mb-4">
   <div class="col-12">
-    <div class="card shadow-sm">
+    <div class="card shadow-sm h-100">
       <div
         class="card-header bg-white d-flex justify-content-between align-items-center"
       >
@@ -54,116 +47,68 @@
           <i class="fa-solid fa-gem me-2"></i>Tespit Edilen En İyi 5 Fırsat
         </h5>
       </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-striped table-hover mb-0 align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Marka</th>
-                <th>Beygir</th>
-                <th>Motor Hacmi</th>
-                <th>Gerçek Fiyat</th>
-                <th>Tahmini Değer</th>
-                <th>Fark (Kazanç)</th>
-                <th>Z-Skoru</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for car in opportunities %}
-              <tr>
-                <td class="fw-bold">{{ car['Marka'].upper() }}</td>
-                <td>{{ car['BeygirGucu'] }} HP</td>
-                <td>{{ car['MotorHacmi'] }} cc</td>
-                <td class="text-success fw-bold">{{ car['Fiyat'] }} $</td>
-                <td class="text-muted">{{ car['TahminiFiyat'] }} $</td>
-
-                <td>
-                  <span class="badge bg-success"> {{ car['Fark'] }} $ </span>
-                </td>
-
-                <td>{{ car['Z_Skoru'] }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="card-footer text-muted text-center small">
-        * Z-Skoru -1.5'ten küçük olan araçlar "Fırsat" olarak etiketlenmiştir.
+      <div class="card-body p-0 table-responsive">
+        <table class="table table-striped table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Marka</th>
+              <th>Beygir</th>
+              <th>Gerçek Fiyat</th>
+              <th>Tahmini Değer</th>
+              <th>Kazanç</th>
+              <th>Z-Skoru</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for car in opportunities %}
+            <tr>
+              <td class="fw-bold">{{ car['Marka'].upper() }}</td>
+              <td>{{ car['Beygir Gücü'] }} HP</td>
+              <td class="text-success fw-bold">{{ car['Fiyat'] }} $</td>
+              <td class="text-muted">{{ car['Tahmini Değer'] }} $</td>
+              <td><span class="badge bg-success">{{ car['Fark'] }} $</span></td>
+              <td>{{ car['Z_Skoru'] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  // Flask'tan gelen verileri JavaScript formatına çeviriyoruz.
-  // normalData: Mavi noktalar (Temiz Piyasa)
-  const normalData = {{ chart_data | tojson }}.map(item => {
-      return { x: item[0], y: item[1] }; // item[0]=Beygir, item[1]=Fiyat
-  });
+  // Grafiği Çizen JS Kodu
+  const normalData = {{ chart_data | tojson }}.map(item => ({ x: item[0], y: item[1] }));
+  const outlierData = {{ outlier_data | tojson }}.map(item => ({ x: item[0], y: item[1] }));
 
-  // outlierData: Kırmızı yıldızlar (Fırsatlar)
-  const outlierData = {{ outlier_data | tojson }}.map(item => {
-      return { x: item[0], y: item[1] };
-  });
-
-  // Grafik Konfigürasyonu (Chart.js)
   const ctx = document.getElementById('marketChart').getContext('2d');
-  const marketChart = new Chart(ctx, {
-      type: 'scatter', // Nokta grafiği (Scatter Plot)
+  new Chart(ctx, {
+      type: 'scatter',
       data: {
           datasets: [
               {
                   label: 'Normal Piyasa',
                   data: normalData,
-                  backgroundColor: 'rgba(54, 162, 235, 0.6)', // Mavi şeffaf
+                  backgroundColor: 'rgba(54, 162, 235, 0.6)', // Mavi
                   borderColor: 'rgba(54, 162, 235, 1)',
-                  pointRadius: 4,
-                  pointHoverRadius: 6
+                  pointRadius: 3
               },
               {
                   label: 'FIRSAT ARAÇLAR',
                   data: outlierData,
-                  backgroundColor: 'rgba(220, 53, 69, 1)', // Kırmızı tam renk
-                  borderColor: 'rgba(220, 53, 69, 1)',
-                  pointRadius: 8, // Daha büyük
-                  pointStyle: 'star', // Yıldız şeklinde
-                  pointHoverRadius: 10
+                  backgroundColor: 'rgba(220, 53, 69, 1)', // KIRMIZI (Kesin Renk)
+                  borderColor: 'rgba(220, 53, 69, 1)',     // Kenarlık da Kırmızı
+                  pointStyle: 'star',
+                  pointRadius: 8
               }
           ]
       },
       options: {
-          responsive: true,
-          maintainAspectRatio: false, // Yüksekliği serbest bırak
+          maintainAspectRatio: false,
           scales: {
-              x: {
-                  type: 'linear',
-                  position: 'bottom',
-                  title: {
-                      display: true,
-                      text: 'Motor Gücü (Beygir)',
-                      font: { weight: 'bold' }
-                  }
-              },
-              y: {
-                  title: {
-                      display: true,
-                      text: 'Fiyat ($)',
-                      font: { weight: 'bold' }
-                  }
-              }
-          },
-          plugins: {
-              tooltip: {
-                  callbacks: {
-                      label: function(context) {
-                          return context.raw.y + ' $ (HP: ' + context.raw.x + ')';
-                      }
-                  }
-              },
-              legend: {
-                  position: 'top'
-              }
+              x: { title: {display: true, text: 'Motor Gücü (Beygir)'} },
+              y: { title: {display: true, text: 'Fiyat ($)'} }
           }
       }
   });
