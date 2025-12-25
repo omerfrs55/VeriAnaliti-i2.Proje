@@ -1,0 +1,192 @@
+{% extends "layout.html" %} {% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-md-10 col-lg-8">
+    <div class="text-center mb-4">
+      <h2 class="fw-bold text-primary">
+        <i class="fa-solid fa-calculator me-2"></i>Araç Değer Hesaplama
+      </h2>
+      <p class="text-muted">
+        Aracın teknik özelliklerini aşağıya girin, yapay zeka modelimiz
+        <strong>adil piyasa değerini</strong> hesaplasın.
+      </p>
+    </div>
+
+    <div class="card shadow-lg border-0">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">
+          <i class="fa-solid fa-filter me-2"></i>Araç Özellikleri
+        </h5>
+      </div>
+      <div class="card-body p-4">
+        <form action="{{ url_for('predict') }}" method="POST">
+          <h6 class="text-primary fw-bold mb-3">Temel Bilgiler</h6>
+          <div class="row mb-3">
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-bold small">Marka</label>
+              <select class="form-select" name="marka" required>
+                <option value="" selected disabled>Seçiniz...</option>
+                {% for item in options['markalar'] %}
+                <option value="{{ item }}">{{ item|upper }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-bold small">Yakıt Tipi</label>
+              <select class="form-select" name="yakit_tipi" required>
+                <option value="" selected disabled>Seçiniz...</option>
+                {% for item in options['yakitlar'] %}
+                <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-bold small">Kasa Tipi</label>
+              <select class="form-select" name="kasa_tipi" required>
+                <option value="" selected disabled>Seçiniz...</option>
+                {% for item in options['kasalar'] %}
+                <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold small">Çekiş Sistemi</label>
+              <select class="form-select" name="cekis" required>
+                <option value="" selected disabled>Seçiniz...</option>
+                {% for item in options['cekisler'] %}
+                <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold small"
+                >Motor Besleme (Turbo)</label
+              >
+              <select class="form-select" name="hava_besleme" required>
+                <option value="" selected disabled>Seçiniz...</option>
+                {% for item in options['beslemeler'] %}
+                <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <hr />
+
+          <h6 class="text-primary fw-bold mb-3">Teknik Detaylar</h6>
+          <div class="row">
+            <div class="col-md-3 mb-3">
+              <label class="form-label fw-bold small">Beygir (HP)</label>
+              <input
+                type="number"
+                class="form-control"
+                name="beygir"
+                placeholder="Örn: 110"
+                step="any"
+                required
+              />
+            </div>
+
+            <div class="col-md-3 mb-3">
+              <label class="form-label fw-bold small">Motor (cc)</label>
+              <input
+                type="number"
+                class="form-control"
+                name="motor"
+                placeholder="Örn: 1600"
+                step="any"
+                required
+              />
+            </div>
+
+            <div class="col-md-3 mb-3">
+              <label class="form-label fw-bold small">Otoyol Yakıt (MPG)</label>
+              <input
+                type="number"
+                class="form-control"
+                name="yakit_tuketin"
+                placeholder="Örn: 30"
+                step="any"
+                required
+              />
+              <div class="form-text text-muted" style="font-size: 0.7rem">
+                Yüksek değer = Az yakar
+              </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+              <label class="form-label fw-bold small">Ağırlık (Lbs)</label>
+              <input
+                type="number"
+                class="form-control"
+                name="agirlik"
+                placeholder="Örn: 2500"
+                step="any"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="alert alert-light border border-success mt-3">
+            <div class="mb-3">
+              <label class="form-label fw-bold text-success">
+                <i class="fa-solid fa-tag me-1"></i>İlandaki Fiyatı (Opsiyonel)
+              </label>
+              <input
+                type="number"
+                class="form-control border-success"
+                name="bulunan_fiyat"
+                placeholder="İlandaki fiyatı girerseniz Fırsat/Kazık analizi yaparım..."
+                step="any"
+              />
+            </div>
+          </div>
+
+          <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Değeri Hesapla
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% if result %}
+    <div
+      class="card shadow mt-4 mb-5 border-{{ result.renk if result.renk else 'primary' }}"
+    >
+      <div
+        class="card-header bg-{{ result.renk if result.renk else 'primary' }} text-white text-center"
+      >
+        <h5 class="mb-0">Analiz Raporu</h5>
+      </div>
+      <div class="card-body text-center">
+        {% if result.hata %}
+        <div class="alert alert-danger">{{ result.hata }}</div>
+        {% else %}
+        <p class="text-muted mb-1">
+          {{ result.marka }} aracı için hesaplanan piyasa değeri:
+        </p>
+        <h1 class="display-4 fw-bold text-dark">{{ result.tahmin }} $</h1>
+
+        {% if result.analiz %}
+        <hr />
+        <h4 class="fw-bold text-{{ result.renk }}">{{ result.analiz }}</h4>
+        <p class="small text-muted">
+          (Bu analiz, modelin tahmin ettiği fiyat ile ilandaki fiyat farkına
+          göre yapılmıştır.)
+        </p>
+        {% endif %} {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

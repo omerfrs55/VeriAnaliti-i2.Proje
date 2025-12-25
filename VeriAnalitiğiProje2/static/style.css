@@ -1,0 +1,61 @@
+/* static/style.css */
+
+/* Sayfa genel fontu ve arka planı */
+body {
+    background-color: #f8f9fa; /* Hafif gri arka plan (Göz yormaz) */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Kartların (Kutuların) Görünümü */
+.card {
+    border: none; /* Kenar çizgilerini kaldır */
+    border-radius: 12px; /* Köşeleri yuvarlat */
+    transition: transform 0.2s; /* Üzerine gelince hareket etsin */
+}
+
+/* Kartın üzerine mouse gelince hafif yukarı kalksın (Efekt) */
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* Tablo Başlıkları */
+.table thead th {
+    background-color: #2c3e50; /* Koyu lacivert */
+    color: white;
+    border: none;
+}
+
+/* Tablo Satırları */
+.table td {
+    vertical-align: middle; /* Yazıları ortala */
+}
+
+/* Küçük fontlu tablolar (Korelasyon matrisleri için) */
+.small-font table {
+    font-size: 0.85rem;
+}
+
+/* Fırsat Aracı Tablosundaki 'FIRSAT' yazısı parlasın */
+.badge.bg-light.text-success {
+    border: 1px solid #198754;
+}
+
+/* Scrollbar (Kaydırma Çubuğu) Özelleştirme */
+/* Sadece Webkit tarayıcılar (Chrome, Edge, Safari) için */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1; 
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888; 
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555; 
+}
