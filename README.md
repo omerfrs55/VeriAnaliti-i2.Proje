@@ -1,0 +1,1 @@
+# VeriAnaliti-i2.Proje
